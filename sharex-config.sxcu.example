@@ -1,15 +1,15 @@
 {
-  "Version": "13.4.0",
-  "Name": "CloudFront AI Image Uploader",
-  "DestinationType": "ImageUploader",
+  "Version": "18.0.1",
+  "DestinationType": "ImageUploader, FileUploader",
   "RequestMethod": "POST",
   "RequestURL": "http://localhost:3456/upload",
+  "Headers": {
+    "x-upload-secret": "YOUR_UPLOAD_SECRET_HERE"
+  },
   "Body": "MultipartFormData",
   "Arguments": {
     "secret": "YOUR_UPLOAD_SECRET_HERE"
   },
   "FileFormName": "file",
-  "URL": "$json:url$",
-  "DeletionURL": "",
-  "ErrorMessage": "$json:error$"
+  "URL": "{json:url}"
 }
