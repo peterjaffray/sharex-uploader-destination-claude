@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  sharex-uploader:
+    build: .
+    ports:
+      - "${PORT:-3456}:3456"
+    environment:
+      - NODE_ENV=production
+      - PORT=3456
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET=${S3_BUCKET}
+      - CLOUDFRONT_DOMAIN=${CLOUDFRONT_DOMAIN}
+      - UPLOAD_SECRET=${UPLOAD_SECRET}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-png,jpg,jpeg,gif,webp,bmp,svg}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+    volumes:
+      # Optional: Mount logs directory
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3456/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'

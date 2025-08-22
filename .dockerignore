@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Environment and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# Documentation (not needed in container)
+*.md
+docs/
+
+# Tests (not needed in production container)
+tests/
+coverage/
+
+# Development files
+.eslintrc.js
+.github/
+
+# ShareX config with secrets
+sharex-config.sxcu
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Temporary files
+tmp/
+temp/
