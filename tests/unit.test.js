@@ -4,8 +4,12 @@ const request = require("supertest");
 const path = require("path");
 const fs = require("fs");
 
-// Mock AWS SDK before importing app
-const AWS = require("aws-sdk-mock");
+// Mock AWS SDK v3 before importing app
+const { mockClient } = require("aws-sdk-client-mock");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+
+// Create S3 mock
+const s3Mock = mockClient(S3Client);
 
 // Set test environment
 process.env.NODE_ENV = "test";
@@ -20,11 +24,9 @@ let server;
 
 describe("ShareX Uploader For Claude (w/ AWS)", () => {
   before((done) => {
-    // Mock AWS S3 upload globally for all tests
-    AWS.mock("S3", "upload", (params, callback) => {
-      callback(null, {
-        Location: `https://${params.Bucket}.s3.amazonaws.com/${params.Key}`,
-      });
+    // Mock AWS S3 PutObjectCommand for all tests
+    s3Mock.on(PutObjectCommand).resolves({
+      ETag: '"mock-etag"',
     });
 
     // Import app after setting environment variables and mocks
@@ -35,7 +37,7 @@ describe("ShareX Uploader For Claude (w/ AWS)", () => {
   });
 
   after((done) => {
-    AWS.restore("S3");
+    s3Mock.restore();
     if (server) {
       server.close(done);
     } else {

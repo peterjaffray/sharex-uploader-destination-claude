@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const AWS = require("aws-sdk");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
@@ -27,14 +27,14 @@ const limiter = rateLimit({
 });
 app.use("/upload", limiter);
 
-// AWS Configuration
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// AWS S3 Client Configuration
+const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ca-central-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
-
-const s3 = new AWS.S3();
 
 // Configuration
 const config = {
@@ -122,7 +122,7 @@ app.post(
 
       console.log(`[${new Date().toISOString()}] Uploading file: ${filePath}`);
 
-      await s3.upload(uploadParams).promise();
+      await s3Client.send(new PutObjectCommand(uploadParams));
 
       const cloudFrontUrl = `https://${config.cloudfrontDomain}/${filePath}`;
 

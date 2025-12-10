@@ -1,26 +1,23 @@
 const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 
-// Mock AWS SDK for integration tests
-const AWS = require('aws-sdk-mock');
+// Mock AWS SDK v3 for integration tests
+const { mockClient } = require('aws-sdk-client-mock');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+
+// Create S3 mock
+const s3Mock = mockClient(S3Client);
 
 describe('Integration Tests', () => {
   before(() => {
-    // Mock AWS services
-    AWS.mock('S3', 'upload', (params, callback) => {
-      // Simulate successful upload
-      const mockResult = {
-        Location: `https://test-bucket.s3.amazonaws.com/${params.Key}`,
-        Bucket: params.Bucket,
-        Key: params.Key,
-        ETag: '"mock-etag"'
-      };
-      callback(null, mockResult);
+    // Mock AWS S3 PutObjectCommand
+    s3Mock.on(PutObjectCommand).resolves({
+      ETag: '"mock-etag"'
     });
   });
 
   after(() => {
-    AWS.restore('S3');
+    s3Mock.restore();
   });
 
   describe('File Path Generation', () => {
@@ -79,20 +76,30 @@ describe('Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle S3 upload failures gracefully', (done) => {
-      // Mock S3 failure
-      AWS.remock('S3', 'upload', (params, callback) => {
-        callback(new Error('S3 upload failed'), null);
-      });
+    it('should handle S3 upload failures gracefully', async () => {
+      // Reset and mock S3 failure
+      s3Mock.reset();
+      s3Mock.on(PutObjectCommand).rejects(new Error('S3 upload failed'));
 
-      // This test would require importing the actual upload function
-      // For now, we just verify the mock is working
-      const s3 = new (require('aws-sdk').S3)();
-      s3.upload({}, (err, _data) => {
+      // Create a new S3Client to test the mock
+      const testClient = new S3Client({ region: 'us-east-1' });
+
+      try {
+        await testClient.send(new PutObjectCommand({
+          Bucket: 'test-bucket',
+          Key: 'test-key',
+          Body: 'test'
+        }));
+        // Should not reach here
+        expect.fail('Expected error to be thrown');
+      } catch (err) {
         expect(err).to.be.an('error');
         expect(err.message).to.equal('S3 upload failed');
-        done();
-      });
+      }
+
+      // Restore successful mock for other tests
+      s3Mock.reset();
+      s3Mock.on(PutObjectCommand).resolves({ ETag: '"mock-etag"' });
     });
   });
 });
