@@ -1,4 +1,4 @@
-const { describe, it, before, after, beforeEach } = require('mocha');
+const { describe, it, before, beforeEach } = require('mocha');
 const { expect } = require('chai');
 
 // Mock AWS SDK v3 for integration tests
