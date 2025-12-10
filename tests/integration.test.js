@@ -1,23 +1,25 @@
-const { describe, it, before, after } = require('mocha');
+const { describe, it, before, after, beforeEach } = require('mocha');
 const { expect } = require('chai');
 
 // Mock AWS SDK v3 for integration tests
 const { mockClient } = require('aws-sdk-client-mock');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
-// Create S3 mock
+// Create S3 mock - this must happen before any S3Client is instantiated
 const s3Mock = mockClient(S3Client);
 
 describe('Integration Tests', () => {
   before(() => {
-    // Mock AWS S3 PutObjectCommand
+    // Set test environment
+    process.env.NODE_ENV = 'test';
+  });
+
+  beforeEach(() => {
+    // Reset and set up mock before each test
+    s3Mock.reset();
     s3Mock.on(PutObjectCommand).resolves({
       ETag: '"mock-etag"'
     });
-  });
-
-  after(() => {
-    s3Mock.restore();
   });
 
   describe('File Path Generation', () => {
@@ -77,7 +79,7 @@ describe('Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle S3 upload failures gracefully', async () => {
-      // Reset and mock S3 failure
+      // Mock S3 failure for this test
       s3Mock.reset();
       s3Mock.on(PutObjectCommand).rejects(new Error('S3 upload failed'));
 
@@ -96,10 +98,6 @@ describe('Integration Tests', () => {
         expect(err).to.be.an('error');
         expect(err.message).to.equal('S3 upload failed');
       }
-
-      // Restore successful mock for other tests
-      s3Mock.reset();
-      s3Mock.on(PutObjectCommand).resolves({ ETag: '"mock-etag"' });
     });
   });
 });

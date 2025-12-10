@@ -28,13 +28,19 @@ const limiter = rateLimit({
 app.use("/upload", limiter);
 
 // AWS S3 Client Configuration
-const s3Client = new S3Client({
+const s3ClientConfig = {
   region: process.env.AWS_REGION || "ca-central-1",
-  credentials: {
+};
+
+// Only add credentials if not in test mode (mocks handle this in tests)
+if (process.env.NODE_ENV !== "test") {
+  s3ClientConfig.credentials = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+  };
+}
+
+const s3Client = new S3Client(s3ClientConfig);
 
 // Configuration
 const config = {

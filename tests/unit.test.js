@@ -1,4 +1,4 @@
-const { describe, it, before, after } = require("mocha");
+const { describe, it, before, after, beforeEach } = require("mocha");
 const { expect } = require("chai");
 const request = require("supertest");
 const path = require("path");
@@ -8,7 +8,7 @@ const fs = require("fs");
 const { mockClient } = require("aws-sdk-client-mock");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-// Create S3 mock
+// Create S3 mock - must be created before any S3Client instances
 const s3Mock = mockClient(S3Client);
 
 // Set test environment
@@ -24,15 +24,18 @@ let server;
 
 describe("ShareX Uploader For Claude (w/ AWS)", () => {
   before((done) => {
-    // Mock AWS S3 PutObjectCommand for all tests
-    s3Mock.on(PutObjectCommand).resolves({
-      ETag: '"mock-etag"',
-    });
-
     // Import app after setting environment variables and mocks
     app = require("../server");
     server = app.listen(() => {
       done();
+    });
+  });
+
+  beforeEach(() => {
+    // Reset and set up mock before each test
+    s3Mock.reset();
+    s3Mock.on(PutObjectCommand).resolves({
+      ETag: '"mock-etag"',
     });
   });
 
